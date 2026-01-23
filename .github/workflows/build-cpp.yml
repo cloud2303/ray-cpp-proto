@@ -23,8 +23,12 @@ jobs:
             - name: Install C++ Protobuf & gRPC Tools
               run: |
                   sudo apt-get update
-                  sudo apt-get install -y protobuf-compiler libprotobuf-dev grpc-proto libgrpc++-dev protobuf-compiler-grpc
-
+                  sudo apt-get install -y \
+                      protobuf-compiler \
+                      libprotobuf-dev \
+                      libgrpc++-dev \
+                      protobuf-compiler-grpc \
+                      pkg-config
             - name: Transform proto to C++
               run: |
                   release_status="0"
