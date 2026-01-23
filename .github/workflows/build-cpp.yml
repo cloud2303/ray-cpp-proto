@@ -1,0 +1,92 @@
+name: Build C++ Protobuf
+on:
+    schedule:
+        - cron: "00 20 * * *"
+    workflow_dispatch:
+
+env:
+    GH_TOKEN: ${{ github.token }}
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v4
+
+            - name: Set up Git
+              run: |
+                  git config --global user.name "github-actions[bot]"
+                  git config --global user.email "github-actions[bot]@users.noreply.github.com"
+                  git config --global advice.detachedHead false
+
+            - name: Install C++ Protobuf & gRPC Tools
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install -y protobuf-compiler libprotobuf-dev grpc-proto libgrpc++-dev protobuf-compiler-grpc
+
+            - name: Transform proto to C++
+              run: |
+                  release_status="0"
+                  release_version="$(date "+%Y%m%d%H%M%S")"
+                  repo_version="$(curl -sL https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.tag_name')"
+
+                  # 1. 检查版本更新 (Xray)
+                  xray_version="$(curl -sL https://api.github.com/repos/XTLS/Xray-core/releases/latest | jq -r '.tag_name')"
+                  if [ "$repo_version" = "null" ] || [ ! -f xray-version ] || [ "$xray_version" != "$(cat xray-version)" ]; then
+                    echo "$xray_version" > xray-version
+                    git add xray-version
+                    git commit -m "Bump Xray-core to $xray_version"
+                    release_status="1"
+                  fi
+
+                  # 2. 检查版本更新 (v2ray)
+                  v2ray_version="$(curl -sL https://api.github.com/repos/v2fly/v2ray-core/releases/latest | jq -r '.tag_name')"
+                  if [ "$repo_version" = "null" ] || [ ! -f v2ray-version ] || [ "$v2ray_version" != "$(cat v2ray-version)" ]; then
+                    echo "$v2ray_version" > v2ray-version
+                    git add v2ray-version
+                    git commit -m "Bump v2ray-core to $v2ray_version"
+                    release_status="1"
+                  fi
+
+                  # 3. 如果有更新，开始构建
+                  if [ "$release_status" = "1" ] || [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+                    git push
+                    mkdir -p "$release_version"
+
+                    # 处理 Xray-core
+                    mkdir -p "$release_version/Xray-cpp-$xray_version"
+                    git clone -b "$xray_version" --depth 1 https://github.com/XTLS/Xray-core.git
+                    
+                    find Xray-core -type f -name "*.proto" -exec protoc \
+                      --proto_path=Xray-core \
+                      --cpp_out="$release_version/Xray-cpp-$xray_version" \
+                      --grpc_out="$release_version/Xray-cpp-$xray_version" \
+                      --plugin=protoc-gen-grpc=$(which grpc_cpp_plugin) \
+                      {} \;
+
+                    # 处理 v2ray-core
+                    mkdir -p "$release_version/v2ray-cpp-$v2ray_version"
+                    git clone -b "$v2ray_version" --depth 1 https://github.com/v2fly/v2ray-core.git
+                    
+                    find v2ray-core -type f -name "*.proto" -exec protoc \
+                      --proto_path=v2ray-core \
+                      --cpp_out="$release_version/v2ray-cpp-$v2ray_version" \
+                      --grpc_out="$release_version/v2ray-cpp-$v2ray_version" \
+                      --plugin=protoc-gen-grpc=$(which grpc_cpp_plugin) \
+                      {} \;
+
+                    # 下载 Geo 资源
+                    mkdir -p "$release_version/geo-assets"
+                    curl -sL https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat -o "$release_version/geo-assets/geoip.dat"
+                    curl -sL https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat -o "$release_version/geo-assets/geosite.dat"
+
+                    # 打包并发布
+                    cd "$release_version"
+                    zip -q -r "Xray-cpp-$xray_version.zip" "Xray-cpp-$xray_version"
+                    zip -q -r "v2ray-cpp-$v2ray_version.zip" "v2ray-cpp-$v2ray_version"
+                    zip -q -r "geo-assets.zip" "geo-assets"
+                    cd ..
+
+                    gh release create "$release_version" --generate-notes "$release_version"/*.zip
+                  fi
