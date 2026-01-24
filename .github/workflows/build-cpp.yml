@@ -77,7 +77,7 @@ jobs:
           if [ "$repo_version" = "null" ] || [ ! -f xray-version ] || [ "$xray_version" != "$(cat xray-version)" ]; then
             echo "$xray_version" > xray-version
             git add xray-version
-            git commit -m "Bump Xray-core to $xray_version"
+            git commit -m "Bump Xray-core to $xray_version" || true
             release_status="1"
           fi
 
