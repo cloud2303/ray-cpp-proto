@@ -56,7 +56,7 @@ jobs:
       - name: Install Tools via vcpkg
         run: |
           # 核心步骤：安装与本地版本一致的 protobuf 和 grpc
-          ${{ env.VCPKG_ROOT }}/vcpkg install protobuf grpc --triplet x64-linux
+          ${{ env.VCPKG_ROOT }}/vcpkg install --triplet x64-linux
 
       - name: Transform proto to C++
         run: |
