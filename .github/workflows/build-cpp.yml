@@ -77,8 +77,10 @@ jobs:
           if [ "$repo_version" = "null" ] || [ ! -f xray-version ] || [ "$xray_version" != "$(cat xray-version)" ]; then
             echo "$xray_version" > xray-version
             git add xray-version
-            git commit -m "Bump Xray-core to $xray_version" || true
-            release_status="1"
+            if ! git diff --cached --quiet; then
+              git commit -m "Bump Xray-core to $xray_version"
+              release_status="1"
+            fi
           fi
 
           # 2. 检查版本更新 (v2ray)
@@ -86,8 +88,11 @@ jobs:
           if [ "$repo_version" = "null" ] || [ ! -f v2ray-version ] || [ "$v2ray_version" != "$(cat v2ray-version)" ]; then
             echo "$v2ray_version" > v2ray-version
             git add v2ray-version
-            git commit -m "Bump v2ray-core to $v2ray_version"
-            release_status="1"
+
+            if ! git diff --cached --quiet; then
+              git commit -m "Bump v2ray-core to $v2ray_version"
+              release_status="1"
+            fi
           fi
 
           # 3. 如果有更新，开始构建
