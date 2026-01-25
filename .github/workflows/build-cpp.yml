@@ -103,7 +103,8 @@ jobs:
             # 处理 Xray-core
             mkdir -p "$release_version/Xray-cpp-$xray_version"
             git clone -b "$xray_version" --depth 1 https://github.com/XTLS/Xray-core.git
-            
+            # 修正 router/config.proto 中的 Domain 字段名称冲突问题
+            sed -i 's/Domain = 2;/RootDomain = 2;/g' Xray-core/app/router/config.proto
             # 使用 vcpkg 编译出的编译器和插件
             find Xray-core -type f -name "*.proto" -exec $PROTOC_EXE \
               --proto_path=Xray-core \
