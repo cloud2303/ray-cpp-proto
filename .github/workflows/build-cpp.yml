@@ -37,7 +37,13 @@ jobs:
 
       - name: Install Build Essentials
         run: |
-          sudo apt-get update && sudo apt-get install -y mono-complete ninja-build zip
+          sudo apt-get update
+          sudo apt-get install -y mono-complete ninja-build zip gcc-14 g++-14
+          # 固定使用 GCC 14，确保 vcpkg 二进制缓存（nuget）ABI 一致可复用
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-14 100
+          sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-14 100
+          gcc --version
+          g++ --version
 
       - name: Bootstrap vcpkg
         run: ${{ env.VCPKG_ROOT }}/bootstrap-vcpkg.sh
