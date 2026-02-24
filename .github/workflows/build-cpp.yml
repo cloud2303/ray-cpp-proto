@@ -13,7 +13,7 @@ env:
   VCPKG_BINARY_SOURCES: "clear;nuget,https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json,readwrite"
   USERNAME: ${{ github.repository_owner }}
   FEED_URL: "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
-  GH_TOKEN: ${{ github.token }}
+  GH_TOKEN: ${{ secrets.CI_TOKEN }}
 
 jobs:
   build:
