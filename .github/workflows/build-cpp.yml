@@ -31,7 +31,7 @@ jobs:
         with:
           repository: microsoft/vcpkg
           path: vcpkg
-          ref: 912567f6fdd1883e07b070dcc0aa67cec072042a
+          ref: aa2d37682e3318d93aef87efa7b0e88e81cd3d59
 
       - name: Install Build Essentials
         run: |
