@@ -113,6 +113,12 @@ jobs:
             git clone -b "$xray_version" --depth 1 https://github.com/XTLS/Xray-core.git
             # 修正 router/config.proto 中的 Domain 字段名称冲突问题
             sed -i 's/Domain = 2;/RootDomain = 2;/g' Xray-core/app/router/config.proto
+            # 单独保留 Xray 的 proto 原文件，供其他语言（如 Rust）本地生成代码
+            mkdir -p "$release_version/Xray-proto-$xray_version"
+            (
+              cd Xray-core
+              find . -type f -name "*.proto" -exec cp --parents "{}" "../$release_version/Xray-proto-$xray_version/" \;
+            )
             # 使用 vcpkg 编译出的编译器和插件
             find Xray-core -type f -name "*.proto" -exec $PROTOC_EXE \
               --proto_path=Xray-core \
@@ -140,6 +146,7 @@ jobs:
             # 打包并发布
             cd "$release_version"
             zip -q -r "Xray-cpp-$xray_version.zip" "Xray-cpp-$xray_version"
+            zip -q -r "Xray-proto-$xray_version.zip" "Xray-proto-$xray_version"
             zip -q -r "v2ray-cpp-$v2ray_version.zip" "v2ray-cpp-$v2ray_version"
             zip -q -r "geo-assets.zip" "geo-assets"
             cd ..
